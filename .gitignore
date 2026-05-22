@@ -4,3 +4,5 @@ flow.png
 database/go.mod
 models/go.mod
 */go.mod
+go.sum
+*/go.sum
