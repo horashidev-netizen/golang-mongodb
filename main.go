@@ -34,7 +34,8 @@ func main() {
 	routes.UserRouter(router)
 	routes.GenreRouter(router)
 	routes.MovieRoutes(router)
-
+	routes.ReviewRouter(router)
+	
 	router.GET("/api", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"success": "Welcome to horashi api!"})

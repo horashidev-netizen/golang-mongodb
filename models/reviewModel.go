@@ -6,7 +6,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-type Review struct {
+type Reviews struct {
 	Id        bson.ObjectID `json:"id,omitempty" bson:"_id,omitempty"`
 	MovieId   string        `json:"movie_id" bson:"movie_id" validate:"required"`
 	Content   string        `json:"content" bson:"content" validate:"required,min=5"`

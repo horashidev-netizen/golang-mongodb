@@ -33,7 +33,7 @@ func ConfirmPassword(userPassword string, passwordEntered string) (bool, string)
 	check := true
 	msg := ""
 	if err != nil {
-		msg = fmt.Sprintf("Look like you entered a wrong password")
+		msg = "Look like you entered a wrong password"
 		check = false
 	}
 	return check, msg

@@ -30,7 +30,7 @@ func CreateGenre() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"Status":  http.StatusBadRequest,
 				"Message": err.Error(),
-				"Data":    map[string]interface{}{"data": err.Error()},
+				"Data":    map[string]any{"data": err.Error()},
 			})
 			return
 		}
@@ -64,15 +64,7 @@ func CreateGenre() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"Status":  http.StatusBadRequest,
 				"Message": err.Error(),
-				"Data":    map[string]interface{}{"data": err.Error()},
-			})
-			return
-		}
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"Status":  http.StatusInternalServerError,
-				"Message": err.Error(),
-				"Data":    map[string]interface{}{"data": err.Error()},
+				"Data":    map[string]any{"data": err.Error()},
 			})
 			return
 		}
@@ -102,13 +94,13 @@ func GetGenre() gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"Status":  http.StatusInternalServerError,
 				"Message": err.Error(),
-				"Data":    map[string]interface{}{"data": err.Error()},
+				"Data":    map[string]any{"data": err.Error()},
 			})
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"Status": http.StatusOK,
-			"Data":   map[string]interface{}{"data": genre},
+			"Data":   map[string]any{"data": genre},
 		})
 
 	}
@@ -161,7 +153,7 @@ func GetGenres() gin.HandlerFunc {
 
 		// Format lại kết quả json cho đẹp
 		projectStage := bson.D{{Key: "$project", Value: bson.D{
-			{Key: "total_count", Value: bson.D{{Key: "$arrayElemAt", Value: []interface{}{"$metadata.total_count", 0}}}},
+			{Key: "total_count", Value: bson.D{{Key: "$arrayElemAt", Value: []any{"$metadata.total_count", 0}}}},
 			{Key: "genre_items", Value: 1},
 		}}}
 
@@ -183,7 +175,7 @@ func GetGenres() gin.HandlerFunc {
 		if len(allGenres) == 0 {
 			c.JSON(http.StatusOK, gin.H{
 				"total_count": 0,
-				"genre_items": []interface{}{},
+				"genre_items": []any{},
 			})
 			return
 		}
