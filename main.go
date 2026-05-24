@@ -1,10 +1,8 @@
 package main
 
 import (
+	"golang-mongodb/database"
 	"golang-mongodb/routes"
-
-	"github.com/horashidev-netizen/golang-mongodb/database"
-
 	"log"
 	"os"
 
@@ -26,13 +24,17 @@ func main() {
 
 	//run database
 	database.StartDB()
+	//database.StartRedis()
 
 	//Log events
 	router.Use(gin.Logger())
+
 	//Register app routes
 	routes.AuthRoutes(router)
-	// Start server on port 8080 (default) or 9000 from env
-	// Server will listen on 0.0.0.0:8080 (localhost:8080 or 9000 on Windows)
+	routes.UserRouter(router)
+	routes.GenreRouter(router)
+	routes.MovieRoutes(router)
+
 	router.GET("/api", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"success": "Welcome to horashi api!"})

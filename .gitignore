@@ -1,8 +1,6 @@
 go.mod
 flow.png
 .env
-database/go.mod
-models/go.mod
 */go.mod
 go.sum
 */go.sum
