@@ -12,6 +12,27 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
+
+// Hàm này sẽ thiết lập cấu hình tự xóa (TTL Index) cho Token
+func CreateTTLIndex(client *mongo.Client) {
+	collection := client.Database("horashi-api").Collection("refresh_tokens")
+
+	// Tạo một Index trên trường "expires_at"
+	indexModel := mongo.IndexModel{
+		Keys: bson.D{{Key: "expires_at", Value: 1}},
+		// ExpireAfterSeconds = 0 nghĩa là MongoDB sẽ tự xóa bản ghi đúng vào mốc thời gian lưu trong cột expires_at
+		Options: options.Index().SetExpireAfterSeconds(0),
+	}
+
+	_, err := collection.Indexes().CreateOne(context.TODO(), indexModel)
+	if err != nil {
+		fmt.Println("Lỗi khi tạo TTL Index cho Refresh Token:", err.Error())
+	} else {
+		fmt.Println("Đã thiết lập thành công TTL Index cho Refresh Token!")
+	}
+}
+
+
 func StartDB() *mongo.Client {
 	err := godotenv.Load(".env")
 	if err != nil {
@@ -29,7 +50,7 @@ func StartDB() *mongo.Client {
 
 	// Sends a ping to confirm a successful connection
 	var result bson.M
-	if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{"ping", 1}}).Decode(&result); err != nil {
+	if err := client.Database("admin").RunCommand(context.TODO(), bson.D{{Key: "ping", Value: 1}}).Decode(&result); err != nil {
 		panic(err)
 	}
 

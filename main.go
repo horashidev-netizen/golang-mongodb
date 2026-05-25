@@ -24,7 +24,8 @@ func main() {
 
 	//run database
 	database.StartDB()
-	//database.StartRedis()
+
+	database.CreateTTLIndex(database.Client)
 
 	//Log events
 	router.Use(gin.Logger())
@@ -35,6 +36,7 @@ func main() {
 	routes.GenreRouter(router)
 	routes.MovieRoutes(router)
 	routes.ReviewRouter(router)
+	routes.HistoryRouter(router)
 	
 	router.GET("/api", func(c *gin.Context) {
 		c.JSON(200, gin.H{

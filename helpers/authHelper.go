@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -9,7 +10,7 @@ import (
 func VerifyUserType(c *gin.Context, role string) (err error) {
 	userType := c.GetString("user_type")
 	err = nil
-	if userType != role {
+	if strings.ToUpper(userType) != role {
 		err = errors.New("you are not authorised to access this resource")
 		return err
 	}

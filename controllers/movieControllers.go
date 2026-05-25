@@ -66,6 +66,12 @@ func CreateMovie() gin.HandlerFunc {
 			c.JSON(http.StatusConflict, gin.H{"error": "Tên phim này đã tồn tại trong hệ thống!"})
 			return
 		}
+		textToEmbed := "Tên phim: " + movie.Name + ". Chủ đề: " + movie.Topic
+		embedding, errEmbed := helpers.GetEmbedding(textToEmbed)
+		if errEmbed != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi tạo AI Vector: " + errEmbed.Error()})
+			return
+		}
 
 		// 5. Khởi tạo đối tượng Phim mới
 		newMovie := models.Movie{
@@ -74,6 +80,7 @@ func CreateMovie() gin.HandlerFunc {
 			Topic:     movie.Topic,
 			GenreId:   movie.GenreId,
 			MovieURL:  movie.MovieURL,
+			Embedding: embedding,
 			CreatedAt: time.Now(), // Server tự đóng mốc thời gian
 			UpdatedAt: time.Now(), // Server tự đóng mốc thời gian
 		}

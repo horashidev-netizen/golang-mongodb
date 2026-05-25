@@ -15,10 +15,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var UserCollection = database.OpenCollection(database.Client, "users")
+var TokenCollection = database.OpenCollection(database.Client, "refresh_tokens")
 
 func MaskPassword(password string) string {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
@@ -67,6 +69,29 @@ func Login() gin.HandlerFunc {
 		// update token directly to memory and return instantly to retrievedUser
 		retrievedUser.Token = token
 		retrievedUser.RefreshToken = refreshToken
+		// Tính toán thời gian hết hạn của Refresh Token (Ví dụ: 100 giờ từ hiện tại)
+		expiresAt := time.Now().Add(time.Hour * 100)
+
+		// Cấu trúc dữ liệu lưu vào bảng refresh_tokens
+		tokenData := bson.M{
+			"user_id":    user.ID.Hex(), // Dùng retrievedUser.ID.Hex() nếu ở hàm Login
+			"token":      refreshToken,
+			"expires_at": expiresAt,     // MongoDB sẽ nhìn vào mốc này để tự xóa
+		}
+
+		// Dùng Upsert: Nếu user_id đã có Token cũ thì ghi đè, chưa có thì tạo mới
+		opts := options.UpdateOne().SetUpsert(true)
+		_, errMongoCache := TokenCollection.UpdateOne(
+			ctx, 
+			bson.M{"user_id": user.ID.Hex()}, // Dùng retrievedUser.ID.Hex() nếu ở hàm Login
+			bson.M{"$set": tokenData}, 
+			opts,
+		)
+
+		if errMongoCache != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lưu phiên đăng nhập vào hệ thống"})
+			return
+		}
 		c.JSON(http.StatusOK, retrievedUser)
 	}
 }
@@ -121,15 +146,29 @@ func Signup() gin.HandlerFunc {
 		)
 		user.Token = token
 		user.RefreshToken = refreshToken
-		//Save refTok to redis 100h
-		//errRedis := database.RedisClient.Set(context.TODO(), user.UserId.Hex(), refreshToken, time.Duration(100)*time.Hour).Err()
-		//if errRedis != nil {
-		//	c.JSON(http.StatusInternalServerError, gin.H{
-		//		"Status":  http.StatusInternalServerError,
-		//		"Message": "error",
-		//		"error":   "Cannot save to Redis",
-		//	})
-		//}
+		// Tính toán thời gian hết hạn của Refresh Token (Ví dụ: 100 giờ từ hiện tại)
+		expiresAt := time.Now().Add(time.Hour * 100)
+
+		// Cấu trúc dữ liệu lưu vào bảng refresh_tokens
+		tokenData := bson.M{
+			"user_id":    user.ID.Hex(), // Dùng retrievedUser.ID.Hex() nếu ở hàm Login
+			"token":      refreshToken,
+			"expires_at": expiresAt,     // MongoDB sẽ nhìn vào mốc này để tự xóa
+		}
+
+		// Dùng Upsert: Nếu user_id đã có Token cũ thì ghi đè, chưa có thì tạo mới
+		opts := options.UpdateOne().SetUpsert(true)
+		_, errMongoCache := TokenCollection.UpdateOne(
+			ctx, 
+			bson.M{"user_id": user.ID.Hex()}, // Dùng retrievedUser.ID.Hex() nếu ở hàm Login
+			bson.M{"$set": tokenData}, 
+			opts,
+		)
+
+		if errMongoCache != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Không thể lưu phiên đăng nhập vào hệ thống"})
+			return
+		}
 
 		// save user to MongoDB
 		resultInsertionNumber, insertErr := UserCollection.InsertOne(ctx, user)
@@ -247,5 +286,35 @@ func GetUsers() gin.HandlerFunc {
 
 		// Trả kết quả chuẩn xác
 		c.JSON(http.StatusOK, allUsers[0])
+	}
+}
+func Logout() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		// Lấy uid từ Context (do middleware Authenticate gán)
+		userId := c.GetString("uid")
+		if userId == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Không tìm thấy thông tin xác thực!"})
+			return
+		}
+
+		// Xóa Token của user này khỏi Collection refresh_tokens
+		result, err := TokenCollection.DeleteOne(ctx, bson.M{"user_id": userId})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Lỗi khi dọn dẹp phiên đăng nhập: " + err.Error()})
+			return
+		}
+
+		if result.DeletedCount < 1 {
+			c.JSON(http.StatusOK, gin.H{"Message": "Tài khoản này vốn đã được đăng xuất từ trước!"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"Status":  http.StatusOK,
+			"Message": "Đăng xuất thành công!",
+		})
 	}
 }

@@ -12,6 +12,7 @@ type Movie struct {
 	Topic     string        `json:"topic" bson:"topic" validate:"required"`
 	GenreId   string        `json:"genre_id" bson:"genre_id"`
 	MovieURL  string        `json:"movie_url" bson:"movie_url" validate:"required"`
+	Embedding []float32		`json:"-" bson:"embedding"` 
 	CreatedAt time.Time     `json:"created_at" bson:"created_at"`
 	UpdatedAt time.Time     `json:"updated_at" bson:"updated_at"`
 }
